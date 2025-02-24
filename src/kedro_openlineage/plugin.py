@@ -88,13 +88,7 @@ class OpenLineageKedroHook:
     ) -> None:
         # A Dataset is an abstract representation of data.
         # Build list of inputs as OpenLineage datasets
-        inputs = [
-            Dataset(
-                namespace="kedro",
-                name=name,
-            )
-            for name in inputs
-        ]
+        inputs = [Dataset(namespace="kedro", name=name) for name in inputs]
 
         logger.debug("Emitting OpenLineage run event")
         self._client.emit(
@@ -117,13 +111,7 @@ class OpenLineageKedroHook:
         outputs: dict[str, str],
     ) -> None:
         # Build list of outputs as OpenLineage datasets
-        outputs = [
-            Dataset(
-                namespace="kedro",
-                name=name,
-            )
-            for name in outputs
-        ]
+        outputs = [Dataset(namespace="kedro", name=name) for name in outputs]
 
         logger.debug("Emitting OpenLineage run event")
         self._client.emit(
