@@ -26,7 +26,9 @@ transport:
   url: http://localhost:5000
 ```
 
-And that's it! Now do `kedro run` and you should be able to see the events.
+And that's it! Now do `kedro run` and you should be able to see the events:
+
+![Spaceflights on Marquez](./spaceflights-marquez.png)
 
 ## Development
 
