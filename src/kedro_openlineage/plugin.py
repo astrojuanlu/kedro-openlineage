@@ -68,10 +68,13 @@ class OpenLineageKedroHook:
         logger.debug("Creating OpenLineage client")
         self._client = OpenLineageClient(config=openlineage_conf)
 
+        self._ol_mapping = {}
+
     @hook_impl
     def before_pipeline_run(
         self, run_params: RunParams, pipeline: Pipeline, catalog: CatalogProtocol
     ) -> None:
+        return  # Still not sure what to do with this
         # A Job is a process that consumes or produces Datasets.
         # This is abstract, and can map to different things
         # in different operational contexts.
@@ -106,6 +109,22 @@ class OpenLineageKedroHook:
         catalog: CatalogProtocol,
         inputs: dict[str, str],
     ) -> None:
+        # A Job is a process that consumes or produces Datasets.
+        # This is abstract, and can map to different things
+        # in different operational contexts.
+        # For example, a job could be a task in a workflow orchestration system.
+        job = Job(namespace="kedro", name=node.name)
+
+        # A Run is an instance of a Job that represents one of its occurrences in time.
+        run = Run(
+            runId=str(generate_new_uuid()),
+        )
+
+        self._ol_mapping[node.name] = {
+            "run": run,
+            "job": job,
+        }
+
         # A Dataset is an abstract representation of data.
         # Build list of inputs as OpenLineage datasets
         inputs = [Dataset(namespace="kedro", name=name) for name in inputs]
@@ -115,8 +134,8 @@ class OpenLineageKedroHook:
             RunEvent(
                 eventType=RunState.RUNNING,
                 eventTime=dt.datetime.now().isoformat(),
-                run=self._run,
-                job=self._job,
+                run=run,
+                job=job,
                 producer=PRODUCER,
                 inputs=inputs,
             )
@@ -133,13 +152,15 @@ class OpenLineageKedroHook:
         # Build list of outputs as OpenLineage datasets
         outputs = [Dataset(namespace="kedro", name=name) for name in outputs]
 
+        ol_objects = self._ol_mapping.pop(node.name)
+
         logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
-                eventType=RunState.RUNNING,
+                eventType=RunState.COMPLETE,
                 eventTime=dt.datetime.now().isoformat(),
-                run=self._run,
-                job=self._job,
+                run=ol_objects["run"],
+                job=ol_objects["job"],
                 producer=PRODUCER,
                 outputs=outputs,
             )
@@ -153,6 +174,7 @@ class OpenLineageKedroHook:
         pipeline: Pipeline,
         catalog: CatalogProtocol,
     ) -> None:
+        return  # Still not sure what to do with this
         logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
@@ -172,6 +194,7 @@ class OpenLineageKedroHook:
         pipeline: Pipeline,
         catalog: CatalogProtocol,
     ) -> None:
+        return  # Still not sure what to do with this
         logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
