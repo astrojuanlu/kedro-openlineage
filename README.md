@@ -14,6 +14,20 @@ To install, run
 $ uv pip install kedro-openlineage
 ```
 
+## Overview
+
+After installing the plugin, configure the OpenLineage integration.
+For example, using Marquez as explained in https://openlineage.io/docs/client/python/#start-docker-and-marquez
+
+```
+$ cat conf/base/openlineage.yml
+transport:
+  type: http
+  url: http://localhost:5000
+```
+
+And that's it! Now do `kedro run` and you should be able to see the events.
+
 ## Development
 
 To run style checks:
@@ -22,7 +36,3 @@ To run style checks:
 $ uv tool install pre-commit
 $ pre-commit run -a
 ```
-
-## Overview
-
-Add a longer description here.
