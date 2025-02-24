@@ -4,6 +4,7 @@ import datetime as dt
 import typing as t
 
 import structlog
+from kedro.config import MissingConfigException
 from kedro.framework.context import KedroContext
 from kedro.framework.hooks import hook_impl
 from kedro.io.core import CatalogProtocol
@@ -45,8 +46,27 @@ class RunParams(t.TypedDict):
 class OpenLineageKedroHook:
     @hook_impl
     def after_context_created(self, context: KedroContext):
+        try:
+            if "openlineage" not in context.config_loader.config_patterns.keys():
+                context.config_loader.config_patterns.update(
+                    {
+                        "openlineage": [
+                            "openlineage*",
+                            "openlineage*/**",
+                            "**/openlineage*",
+                        ]
+                    }
+                )
+            openlineage_conf = context.config_loader["openlineage"]
+        except MissingConfigException:
+            logger.warning(
+                "No 'openlineage.yml' config file found in environment. "
+                "Default configuration will be used."
+            )
+            openlineage_conf = {}
+
         logger.debug("Creating OpenLineage client")
-        self._client = OpenLineageClient()
+        self._client = OpenLineageClient(config=openlineage_conf)
 
     @hook_impl
     def before_pipeline_run(
