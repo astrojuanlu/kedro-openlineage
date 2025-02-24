@@ -3,10 +3,12 @@ from __future__ import annotations
 import datetime as dt
 import typing as t
 
+import structlog
 from kedro.framework.context import KedroContext
 from kedro.framework.hooks import hook_impl
 from kedro.io.core import CatalogProtocol
-from kedro.pipeline import Node, Pipeline
+from kedro.pipeline import Pipeline
+from kedro.pipeline.node import Node
 from openlineage.client import OpenLineageClient
 from openlineage.client.event_v2 import (
     Dataset,
@@ -15,8 +17,11 @@ from openlineage.client.event_v2 import (
     RunEvent,
     RunState,
 )
+from openlineage.client.uuid import generate_new_uuid
 
 PRODUCER = "kedro.org"
+
+logger = structlog.get_logger()
 
 
 class RunParams(t.TypedDict):
@@ -40,6 +45,7 @@ class RunParams(t.TypedDict):
 class OpenLineageKedroHook:
     @hook_impl
     def after_context_created(self, context: KedroContext):
+        logger.debug("Creating OpenLineage client")
         self._client = OpenLineageClient()
 
     @hook_impl
@@ -52,22 +58,23 @@ class OpenLineageKedroHook:
         # For example, a job could be a task in a workflow orchestration system.
         self._job = Job(
             namespace="kedro",
-            name=pipeline.name,
+            name=run_params["pipeline_name"] or "__default__",
         )
 
         # A Run is an instance of a Job that represents one of its occurrences in time.
         self._run = Run(
-            runId=run_params["session_id"],
+            # It has to be a UUID, so this won't work
+            # runId=run_params["session_id"],
+            runId=str(generate_new_uuid()),
         )
 
+        logger.debug("Emitting OpenLineage run event")
         run_event = RunEvent(
             eventType=RunState.START,
             eventTime=dt.datetime.now().isoformat(),
             run=self._run,
             job=self._job,
             producer=PRODUCER,
-            # inputs=[...],
-            # outputs=[...],
         )
 
         self._client.emit(run_event)
@@ -84,11 +91,12 @@ class OpenLineageKedroHook:
         inputs = [
             Dataset(
                 namespace="kedro",
-                name=inputs[name],
+                name=name,
             )
             for name in inputs
         ]
 
+        logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
                 eventType=RunState.RUNNING,
@@ -112,11 +120,12 @@ class OpenLineageKedroHook:
         outputs = [
             Dataset(
                 namespace="kedro",
-                name=outputs[name],
+                name=name,
             )
             for name in outputs
         ]
 
+        logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
                 eventType=RunState.RUNNING,
@@ -136,6 +145,7 @@ class OpenLineageKedroHook:
         pipeline: Pipeline,
         catalog: CatalogProtocol,
     ) -> None:
+        logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
                 eventType=RunState.COMPLETE,
@@ -154,6 +164,7 @@ class OpenLineageKedroHook:
         pipeline: Pipeline,
         catalog: CatalogProtocol,
     ) -> None:
+        logger.debug("Emitting OpenLineage run event")
         self._client.emit(
             RunEvent(
                 eventType=RunState.FAIL,
@@ -163,3 +174,6 @@ class OpenLineageKedroHook:
                 producer=PRODUCER,
             )
         )
+
+
+hooks = OpenLineageKedroHook()

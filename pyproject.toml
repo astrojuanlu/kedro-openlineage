@@ -51,7 +51,7 @@ doc = [
 ]
 
 [project.entry-points."kedro.hooks"]
-plugin_name = "plugin_name.plugin:hooks"
+kedro-openlineage = "kedro_openlineage.plugin:hooks"
 
 [tool.pdm.version]
 source = "scm"
