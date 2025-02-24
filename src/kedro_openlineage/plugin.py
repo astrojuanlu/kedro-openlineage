@@ -74,6 +74,7 @@ class OpenLineageKedroHook:
     def before_pipeline_run(
         self, run_params: RunParams, pipeline: Pipeline, catalog: CatalogProtocol
     ) -> None:
+        self._namespace = f"kedro__{run_params['pipeline_name'] or '__default__'}"
         return  # Still not sure what to do with this
         # A Job is a process that consumes or produces Datasets.
         # This is abstract, and can map to different things
@@ -113,7 +114,7 @@ class OpenLineageKedroHook:
         # This is abstract, and can map to different things
         # in different operational contexts.
         # For example, a job could be a task in a workflow orchestration system.
-        job = Job(namespace="kedro", name=node.name)
+        job = Job(namespace=self._namespace, name=node.name)
 
         # A Run is an instance of a Job that represents one of its occurrences in time.
         run = Run(
@@ -127,7 +128,7 @@ class OpenLineageKedroHook:
 
         # A Dataset is an abstract representation of data.
         # Build list of inputs as OpenLineage datasets
-        inputs = [Dataset(namespace="kedro", name=name) for name in inputs]
+        inputs = [Dataset(namespace=self._namespace, name=name) for name in inputs]
 
         logger.debug("Emitting OpenLineage run event")
         self._client.emit(
@@ -150,7 +151,7 @@ class OpenLineageKedroHook:
         outputs: dict[str, str],
     ) -> None:
         # Build list of outputs as OpenLineage datasets
-        outputs = [Dataset(namespace="kedro", name=name) for name in outputs]
+        outputs = [Dataset(namespace=self._namespace, name=name) for name in outputs]
 
         ol_objects = self._ol_mapping.pop(node.name)
 
