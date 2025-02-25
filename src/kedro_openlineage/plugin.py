@@ -75,33 +75,6 @@ class OpenLineageKedroHook:
         self, run_params: RunParams, pipeline: Pipeline, catalog: CatalogProtocol
     ) -> None:
         self._namespace = f"kedro__{run_params['pipeline_name'] or '__default__'}"
-        return  # Still not sure what to do with this
-        # A Job is a process that consumes or produces Datasets.
-        # This is abstract, and can map to different things
-        # in different operational contexts.
-        # For example, a job could be a task in a workflow orchestration system.
-        self._job = Job(
-            namespace="kedro",
-            name=run_params["pipeline_name"] or "__default__",
-        )
-
-        # A Run is an instance of a Job that represents one of its occurrences in time.
-        self._run = Run(
-            # It has to be a UUID, so this won't work
-            # runId=run_params["session_id"],
-            runId=str(generate_new_uuid()),
-        )
-
-        logger.debug("Emitting OpenLineage run event")
-        run_event = RunEvent(
-            eventType=RunState.START,
-            eventTime=dt.datetime.now().isoformat(),
-            run=self._run,
-            job=self._job,
-            producer=PRODUCER,
-        )
-
-        self._client.emit(run_event)
 
     @hook_impl
     def before_node_run(
@@ -164,46 +137,6 @@ class OpenLineageKedroHook:
                 job=ol_objects["job"],
                 producer=PRODUCER,
                 outputs=outputs,
-            )
-        )
-
-    @hook_impl
-    def after_pipeline_run(
-        self,
-        run_params: RunParams,
-        run_result: dict[str, t.Any],
-        pipeline: Pipeline,
-        catalog: CatalogProtocol,
-    ) -> None:
-        return  # Still not sure what to do with this
-        logger.debug("Emitting OpenLineage run event")
-        self._client.emit(
-            RunEvent(
-                eventType=RunState.COMPLETE,
-                eventTime=dt.datetime.now().isoformat(),
-                run=self._run,
-                job=self._job,
-                producer=PRODUCER,
-            )
-        )
-
-    @hook_impl
-    def on_pipeline_error(
-        self,
-        error: Exception,
-        run_params: RunParams,
-        pipeline: Pipeline,
-        catalog: CatalogProtocol,
-    ) -> None:
-        return  # Still not sure what to do with this
-        logger.debug("Emitting OpenLineage run event")
-        self._client.emit(
-            RunEvent(
-                eventType=RunState.FAIL,
-                eventTime=dt.datetime.now().isoformat(),
-                run=self._run,
-                job=self._job,
-                producer=PRODUCER,
             )
         )
 
