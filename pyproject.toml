@@ -1,11 +1,15 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["uv-build>=0.6.6,<0.7"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "kedro_openlineage"
 
 [project]
 name = "kedro-openlineage"
 readme = "README.md"
 requires-python = ">=3.9"
+version = "0.1.dev0"
 license = {file = "LICENSE"}
 description = "OpenLineage integration for Kedro"
 dependencies = [
@@ -29,14 +33,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dynamic = ["version"]
 
 [project.urls]
 source = "https://github.com/astrojuanlu/kedro-openlineage"
 tracker = "https://github.com/astrojuanlu/kedro-openlineage/issues"
 documentation = "https://kedro-openlineage.readthedocs.io"
 
-[project.optional-dependencies]
+[dependency-groups]
 test = [
     "mypy",
     "hypothesis",
@@ -52,9 +55,6 @@ doc = [
 
 [project.entry-points."kedro.hooks"]
 kedro-openlineage = "kedro_openlineage.plugin:hooks"
-
-[tool.pdm.version]
-source = "scm"
 
 [tool.ruff]
 show-fixes = true
@@ -77,7 +77,7 @@ select = [
 convention = "numpy"
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_redundant_casts = true
 warn_unused_configs = true
 pretty = true
